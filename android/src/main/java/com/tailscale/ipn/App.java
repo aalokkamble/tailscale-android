@@ -115,6 +115,11 @@ public class App extends Application {
 				for (InetAddress ip : dnsList) {
 					sb.append(ip.getHostAddress()).append(" ");
 				}
+				String domains = linkProperties.getDomains();
+				if (domains != null){
+					sb.append("\n");
+					sb.append(domains);
+				}
 				dns.updateDNSFromNetwork(sb.toString());
 				onDnsConfigChanged();
 			}
