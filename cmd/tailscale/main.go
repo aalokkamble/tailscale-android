@@ -460,7 +460,7 @@ func (a *App) runBackend(ctx context.Context) error {
 				go b.backend.SetPrefs(state.Prefs)
 			case WebAuthEvent:
 				if !signingIn {
-					go b.backend.StartLoginInteractive()
+					go a.login(ctx, b.backend.StartLoginInteractive)
 					signingIn = true
 				}
 			case SetLoginServerEvent:
@@ -589,6 +589,18 @@ func (a *App) getBugReportID(ctx context.Context, bugReportChan chan<- string, f
 		return
 	}
 	bugReportChan <- string(logBytes)
+}
+
+func (a *App) login(ctx context.Context, errHandler func()) {
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(2*time.Second))
+	defer cancel()
+	r, err := a.localAPIClient.Call(ctx, "POST", "login-interactive", nil)
+	defer r.Body().Close()
+
+	if err != nil {
+		log.Printf("login: %s", err)
+		errHandler()
+	}
 }
 
 func (a *App) processWaitingFiles(b *ipnlocal.LocalBackend) error {
