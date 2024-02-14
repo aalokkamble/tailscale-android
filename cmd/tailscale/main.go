@@ -476,11 +476,7 @@ func (a *App) runBackend(ctx context.Context) error {
 					}
 				}()
 			case LogoutEvent:
-				go func() {
-					ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-					defer cancel()
-					b.backend.Logout(ctx)
-				}()
+				go a.logout(ctx, b.backend.Logout)
 			case ConnectEvent:
 				state.Prefs.WantRunning = e.Enable
 				go b.backend.SetPrefs(state.Prefs)
@@ -600,6 +596,18 @@ func (a *App) login(ctx context.Context, errHandler func()) {
 	if err != nil {
 		log.Printf("login: %s", err)
 		errHandler()
+	}
+}
+
+func (a *App) logout(ctx context.Context, errHandler func(context.Context) error) {
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(5*time.Minute))
+	defer cancel()
+	r, err := a.localAPIClient.Call(ctx, "POST", "logout", nil)
+	defer r.Body().Close()
+
+	if err != nil {
+		log.Printf("logout: %s", err)
+		errHandler(ctx)
 	}
 }
 
